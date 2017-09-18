@@ -62,6 +62,9 @@ ZEND_END_MODULE_GLOBALS(mutils)
 ZEND_TSRMLS_CACHE_EXTERN()
 #endif
 
+// 没这句编译不了？
+extern ZEND_DECLARE_MODULE_GLOBALS(mutils);
+
 #endif	/* PHP_MUTILS_H */
 
 

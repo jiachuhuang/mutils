@@ -1,6 +1,13 @@
 #include "alloc.h"
 
+#include <pthread.h>
 #include <sys/mman.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/types.h>  
+#include <fcntl.h>
+#include <sys/stat.h>
 
 static int create_segments(void **p, size_t size, char **error) {
 	assert(size);

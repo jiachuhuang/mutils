@@ -24,6 +24,7 @@
 
 #include "php.h"
 #include "php_ini.h"
+#include "SAPI.h"
 #include "ext/standard/info.h"
 #include "php_mutils.h"
 
@@ -59,7 +60,8 @@ PHP_MINIT_FUNCTION(mutils)
 PHP_MSHUTDOWN_FUNCTION(mutils)
 {
 	UNREGISTER_INI_ENTRIES();
-	
+
+	MUTILS_SHUTDOWN(ratelimit);
 	return SUCCESS;
 }
 /* }}} */

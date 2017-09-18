@@ -2,6 +2,7 @@
 #ifndef ALLOC_H
 #define ALLOC_H
 
+#include <stdlib.h>
 #include <assert.h>
 
 #define USE_MMAP 1

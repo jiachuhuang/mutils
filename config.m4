@@ -7,9 +7,9 @@ dnl without editing.
 
 dnl If your extension references something external, use with:
 
-dnl PHP_ARG_WITH(mutils, for mutils support,
-dnl Make sure that the comment is aligned:
-dnl [  --with-mutils             Include mutils support])
+PHP_ARG_WITH(mutils, for mutils support,
+Make sure that the comment is aligned:
+[  --with-mutils             Include mutils support])
 
 dnl Otherwise use enable:
 
@@ -59,5 +59,10 @@ if test "$PHP_MUTILS" != "no"; then
   dnl
   dnl PHP_SUBST(MUTILS_SHARED_LIBADD)
 
-  PHP_NEW_EXTENSION(mutils, mutils.c, $ext_shared,, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
+  PHP_NEW_EXTENSION(mutils, 
+    mutils.c                \
+    m_ratelimit.c           \
+    alloc/mmap.c,
+    $ext_shared)
+  PHP_ADD_BUILD_DIR([$ext_builddir/alloc])
 fi

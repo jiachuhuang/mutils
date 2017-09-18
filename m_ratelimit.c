@@ -6,10 +6,11 @@
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "php_mutils.h"
+#include "SAPI.h"
 
 #include "php_mutils.h"
 #include "m_ratelimit.h"
-#include "alloc.h"
+#include "alloc/alloc.h"
 
 #include <time.h>
 
@@ -38,12 +39,12 @@ PHP_METHOD(m_ratelimit, __construct) {
 
 	if(solt < 0 || solt >= MUTILS_G(ratelimit_slot_nums)) {
 		php_error_docref(NULL, E_WARNING, "Solt index out of size [0,%d) ", MUTILS_G(ratelimit_slot_nums));
-		return FAILURE;			
+		return;			
 	}
 
 	if(limit <= 0 ) {
 		php_error_docref(NULL, E_WARNING, "Invaild property limit(%d) ", limit);		
-		return FAILURE;			
+		return;			
 	}
 
 	zend_update_property_long(m_ratelimit_ce, getThis(), ZEND_STRL(M_RATELIMIT_PROPERTY_NAME_SLOT), solt);
@@ -82,11 +83,11 @@ PHP_METHOD(m_ratelimit, acquire) {
 	}
 
 allow:
-	pthread_mutex_unlock(&(rlimit_slots[i].mutex));
+	pthread_mutex_unlock(&(rlimit_slots[Z_LVAL_P(slot)].mutex));
 	RETURN_TRUE;
 
 deny:
-	pthread_mutex_unlock(&(rlimit_slots[i].mutex));
+	pthread_mutex_unlock(&(rlimit_slots[Z_LVAL_P(slot)].mutex));
 	RETURN_FALSE;
 }
 
@@ -113,7 +114,7 @@ MUTILS_STARTUP_FUNCTION(ratelimit) {
 		size = MUTILS_G(ratelimit_slot_nums) * sizeof(rlimit);
 		ah = &alloc_handler;
 		if(!(ah->create_segments((void **)&rlimit_slots, size, &error))) {
-			php_error(E_ERROR, "Shared memory allocator failed '%s': %s", msg, strerror(errno));
+			php_error(E_ERROR, "Shared memory allocator failed '%s': %s", error, strerror(errno));
 			return FAILURE;			
 		}
 
@@ -131,7 +132,7 @@ MUTILS_STARTUP_FUNCTION(ratelimit) {
 		}
 
 		for (i = 0; i < MUTILS_G(ratelimit_slot_nums); ++i) {
-			if(pthread_mutex_init(&(rlimit_slots[i].mutex)), &attr) {
+			if(pthread_mutex_init(&(rlimit_slots[i].mutex), &attr)) {
 				pthread_mutexattr_destroy(&attr);
 				ah->detach_segment((void **)&rlimit_slots, size);
 				return FAILURE;
@@ -146,8 +147,8 @@ MUTILS_STARTUP_FUNCTION(ratelimit) {
 	INIT_CLASS_ENTRY(ce, "M_ratelimit", m_ratelimit_methods);
 	m_ratelimit_ce = zend_register_internal_class(&ce);
 
-	zend_declare_property_long(m_ratelimit_ce, ZEND_STRL(M_RATELIMIT_PROPERTY_NAME_LIMIT), ZEND_ACC_PROTECTED);
-	zend_declare_property_long(m_ratelimit_ce, ZEND_STRL(M_RATELIMIT_PROPERTY_NAME_SLOT), ZEND_ACC_PROTECTED);
+	zend_declare_property_long(m_ratelimit_ce, ZEND_STRL(M_RATELIMIT_PROPERTY_NAME_LIMIT), MUTILS_G(ratelimit_limit), ZEND_ACC_PROTECTED);
+	zend_declare_property_long(m_ratelimit_ce, ZEND_STRL(M_RATELIMIT_PROPERTY_NAME_SLOT), 0, ZEND_ACC_PROTECTED);
 
 	return SUCCESS;
 }
@@ -155,7 +156,6 @@ MUTILS_STARTUP_FUNCTION(ratelimit) {
 MUTILS_SHUTDOWN_FUNCTION(ratelimit) {
 	size_t size;
 	alloc_handlers *ah;
-	size_t size;
 
 	if(MUTILS_G(ratelimit_enable)) {
 		size = MUTILS_G(ratelimit_slot_nums) * sizeof(rlimit);
