@@ -81,12 +81,12 @@ PHP_METHOD(m_ratelimit, acquire) {
 		}
 	}
 
-	pthread_mutex_unlock(&(rlimit_slots[i].mutex));
-
 allow:
+	pthread_mutex_unlock(&(rlimit_slots[i].mutex));
 	RETURN_TRUE;
 
 deny:
+	pthread_mutex_unlock(&(rlimit_slots[i].mutex));
 	RETURN_FALSE;
 }
 
