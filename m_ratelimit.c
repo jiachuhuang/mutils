@@ -66,6 +66,7 @@ PHP_METHOD(m_ratelimit, acquire) {
 	tv = time(NULL);
 
 	if(LOCK(&(rlimit_slots[Z_LVAL_P(slot)].lock), &error)) {
+		error = error? error: "rate limit LOCK error";
 		php_error(E_ERROR, "%s", error);
 		RETURN_FALSE;
 	}
