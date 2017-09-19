@@ -1,5 +1,7 @@
 #include "alloc.h"
 
+#ifdef USE_MMAP
+
 #include <pthread.h>
 #include <sys/mman.h>
 #include <stdlib.h>
@@ -32,3 +34,5 @@ alloc_handlers alloc_mmap_handlers = {
 	detach_segment
 };
 
+
+#endif /* USE_MMAP */
