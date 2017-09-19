@@ -8,7 +8,6 @@
 #include "php_mutils.h"
 #include "SAPI.h"
 
-#include "php_mutils.h"
 #include "m_ratelimit.h"
 #include "alloc/alloc.h"
 

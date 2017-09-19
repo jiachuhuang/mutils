@@ -27,6 +27,7 @@
 #include "SAPI.h"
 #include "ext/standard/info.h"
 #include "php_mutils.h"
+#include "m_ratelimit.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(mutils)
 
