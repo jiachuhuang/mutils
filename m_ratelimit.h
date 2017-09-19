@@ -3,13 +3,14 @@
 #define M_RATELIMIT_H
 
 #include "php_mutils.h"
+#include "lock/lock.h"
 #include <pthread.h>
 
 #define M_RATELIMIT_PROPERTY_NAME_LIMIT "_limit"
 #define M_RATELIMIT_PROPERTY_NAME_SLOT "_slot"
 
 typedef struct {
-	pthread_mutex_t mutex;
+	m_lck_t lock;
 	size_t visit;
 	size_t timeout;
 } rlimit;

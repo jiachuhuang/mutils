@@ -10,6 +10,7 @@
 
 #include "m_ratelimit.h"
 #include "alloc/alloc.h"
+#include "lock/lock.h"
 
 #include <time.h>
 
@@ -53,6 +54,7 @@ PHP_METHOD(m_ratelimit, __construct) {
 PHP_METHOD(m_ratelimit, acquire) {
 	zval *slot, *limit;
 	time_t tv;
+	char *error;
 
 	if(!MUTILS_G(ratelimit_enable)) {
 		RETURN_TRUE;
@@ -62,7 +64,12 @@ PHP_METHOD(m_ratelimit, acquire) {
 	limit = zend_read_property(m_ratelimit_ce, getThis(),  ZEND_STRL(M_RATELIMIT_PROPERTY_NAME_LIMIT), 1, NULL);
 
 	tv = time(NULL);
-	pthread_mutex_lock(&(rlimit_slots[Z_LVAL_P(slot)].mutex));
+	// pthread_mutex_lock(&(rlimit_slots[Z_LVAL_P(slot)].mutex));
+
+	if(LOCK(&(rlimit_slots[Z_LVAL_P(slot)].lock), &error)) {
+		php_error(E_ERROR, "Set mutex attr failed : %s", error);
+		RETURN_FALSE;
+	}
 
 	if(tv < rlimit_slots[Z_LVAL_P(slot)].timeout) {
 		rlimit_slots[Z_LVAL_P(slot)].visit += 1;
@@ -82,11 +89,13 @@ PHP_METHOD(m_ratelimit, acquire) {
 	}
 
 allow:
-	pthread_mutex_unlock(&(rlimit_slots[Z_LVAL_P(slot)].mutex));
+	// pthread_mutex_unlock(&(rlimit_slots[Z_LVAL_P(slot)].mutex));
+	UNLOCK(&(rlimit_slots[Z_LVAL_P(slot)].lock), &error);
 	RETURN_TRUE;
 
 deny:
-	pthread_mutex_unlock(&(rlimit_slots[Z_LVAL_P(slot)].mutex));
+	// pthread_mutex_unlock(&(rlimit_slots[Z_LVAL_P(slot)].mutex));
+	UNLOCK(&(rlimit_slots[Z_LVAL_P(slot)].lock), &error);
 	RETURN_FALSE;
 }
 
@@ -117,22 +126,27 @@ MUTILS_STARTUP_FUNCTION(ratelimit) {
 			return FAILURE;			
 		}
 
-		if(pthread_mutexattr_init(&attr)) {
-			php_error(E_ERROR, "Init mutex attr failed : %s", strerror(errno));
-			ah->detach_segment((void **)&rlimit_slots, size);
-			return FAILURE;	
-		}
+		// if(pthread_mutexattr_init(&attr)) {
+		// 	php_error(E_ERROR, "Init mutex attr failed : %s", strerror(errno));
+		// 	ah->detach_segment((void **)&rlimit_slots, size);
+		// 	return FAILURE;	
+		// }
 
-		if(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED)) {
-			php_error(E_ERROR, "Set mutex attr failed : %s", strerror(errno));
-			pthread_mutexattr_destroy(&attr);
-			ah->detach_segment((void **)&rlimit_slots, size);
-			return FAILURE;				
-		}
+		// if(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED)) {
+		// 	php_error(E_ERROR, "Set mutex attr failed : %s", strerror(errno));
+		// 	pthread_mutexattr_destroy(&attr);
+		// 	ah->detach_segment((void **)&rlimit_slots, size);
+		// 	return FAILURE;				
+		// }
 
 		for (i = 0; i < MUTILS_G(ratelimit_slot_nums); ++i) {
-			if(pthread_mutex_init(&(rlimit_slots[i].mutex), &attr)) {
-				pthread_mutexattr_destroy(&attr);
+			// if(pthread_mutex_init(&(rlimit_slots[i].mutex), &attr)) {
+			// 	pthread_mutexattr_destroy(&attr);
+			// 	ah->detach_segment((void **)&rlimit_slots, size);
+			// 	return FAILURE;
+			// }
+			if(CREATE_LOCK(&(rlimit_slots[i].lock), &error)) {
+				php_error(E_ERROR, "Set mutex attr failed : %s", error);
 				ah->detach_segment((void **)&rlimit_slots, size);
 				return FAILURE;
 			}
@@ -140,7 +154,7 @@ MUTILS_STARTUP_FUNCTION(ratelimit) {
 			rlimit_slots[i].timeout = 0;
 		}
 
-		pthread_mutexattr_destroy(&attr);
+		// pthread_mutexattr_destroy(&attr);
 	} 
 
 	INIT_CLASS_ENTRY(ce, "M_ratelimit", m_ratelimit_methods);
