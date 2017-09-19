@@ -62,7 +62,9 @@ if test "$PHP_MUTILS" != "no"; then
   PHP_NEW_EXTENSION(mutils, 
     mutils.c                \
     m_ratelimit.c           \
-    alloc/mmap.c,
+    alloc/mmap.c             \
+    lock/pthreadmutex.c,
     $ext_shared)
   PHP_ADD_BUILD_DIR([$ext_builddir/alloc])
+  PHP_ADD_BUILD_DIR([$ext_builddir/lock])
 fi

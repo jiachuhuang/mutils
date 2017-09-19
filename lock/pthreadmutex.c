@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
+
+#include "lock.h"
 
 #ifdef PTHREADMUTEX_LOCKS
 
@@ -33,7 +36,7 @@ int pthreadmutex_create(pthread_mutex_t *lock, char **error) {
 }
 
 void pthreadmutex_destroy(pthread_mutex_t *lock) {
-	return;
+	
 }
 
 int pthreadmutex_lock(pthread_mutex_t *lock, char **error) {
@@ -52,7 +55,7 @@ int pthreadmutex_lock(pthread_mutex_t *lock, char **error) {
     return ret;
 }
 
-void pthreadmutex_unlock(pthread_mutex_t *lock, char **error) {
+int pthreadmutex_unlock(pthread_mutex_t *lock, char **error) {
 	int ret = 0;
     if((ret = pthread_mutex_unlock(lock))) {
         *error = "unable to unlock pthread lock";

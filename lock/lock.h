@@ -9,7 +9,7 @@
 int pthreadmutex_create(pthread_mutex_t *lock, char **error);
 void pthreadmutex_destroy(pthread_mutex_t *lock);
 int pthreadmutex_lock(pthread_mutex_t *lock, char **error);
-void pthreadmutex_unlock(pthread_mutex_t *lock, char **error);
+int pthreadmutex_unlock(pthread_mutex_t *lock, char **error);
 #endif
 
 #define CREATE_LOCK(lock, error) m_create_lock(lock, error)
